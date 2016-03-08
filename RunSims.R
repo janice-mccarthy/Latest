@@ -1,0 +1,11 @@
+nsim<-1000
+n0<-500
+n1<-500
+beta.1<-0
+beta.2<-0
+beta.3<-0
+alpha.1<-0
+gamma.1<-1
+freq<-0.30
+alfa<-0.05
+results<-samplingScore.function(nsim,n0,n1,beta.1,beta.2,beta.3,alpha.1,gamma.1,freq,alfa)
