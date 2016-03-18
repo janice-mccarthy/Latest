@@ -1,6 +1,6 @@
 samplingScore.function<-function(nsim,n0,n1,beta.1,beta.2,beta.3,alpha.1,gamma.1,freq,alfa){
   
-  out.of.region<-0
+  in.region<-0
   # initialize matrices and vectors
   p.const<-rep(0,nsim)
   const<-rep(0,nsim)
@@ -56,30 +56,43 @@ for(j in 1:nsim){   # loop over simulated datasets
       }
       
     } # end sampling loop
+    #
+    
+    # scale genotypes
+    x1<-(x1-mean(x1))/sd(x1)
+    x2<-(x2-mean(x2))/sd(x2)
     
     # fit null model
   
     fit.0<-glm(y~z,family="binomial")
-   
-    theta.0<-c(0,0,0,fit.0$coefficients) # null theta under full model
+    nuisance<-fit.0$coefficients
     
-    Information<-(1/n)*(hessian.n(x1,x2,z,n,theta.0)) # information matrix (sign is accounted for in hessian.i function)
+    theta.0<-c(as.numeric(nuisance[1]),as.numeric(nuisance[2])) # null theta under full model
+    e.eta<-rep(0,n)
+    
+    for (k in 1:n){
+      w<-c(1,z[k])    
+      e.eta[k]<-exp(w%*%theta.0) 
+    }
+    
+    Information<-(1/n)*(hessian.n(x1,x2,z,n,e.eta)) # information matrix (sign is accounted for in hessian.i function)
   
     var<-solve(Information) # variance under null
-    
+
     rho.12<-var[1,2]/sqrt(var[1,1]*var[2,2])
     rho.13<-var[1,3]/sqrt(var[1,1]*var[3,3])
     rho.23<-var[2,3]/sqrt(var[2,2]*var[3,3])
     
-    weight <-1/(2*pi) - 1/(4*pi)*(acos(rho.12)+acos(rho.13)+acos(rho.23)) # weight for chi-bar-squared statistic
+    weight <-1/(2) - (1/(4*pi))*(acos(rho.12)+acos(rho.13)+acos(rho.23)) # weight for chi-bar-squared statistic
+    print(weight)
     
     # information submatrices needed for efficient score
     I.ab<-Information[1:3,4:5]
     I.bb<-solve(Information[4:5,4:5])
   
-    eff.s<-eff.score.n(y,x1,x2,z,n,theta.0,I.ab,I.bb) # efficient score
+    eff.s<-eff.score.n(y,x1,x2,z,n,e.eta,I.ab,I.bb) # efficient score
     
-    var.eff.s<-var.eff.score.n(y,x1,x2,z,n,theta.0,I.ab,I.bb) # variance estimator for efficient score
+    var.eff.s<-var.eff.score.n(y,x1,x2,z,n,e.eta,I.ab,I.bb) # variance estimator for efficient score
    
     inv.var.eff.s<-solve(var.eff.s)
   
@@ -109,12 +122,13 @@ for(j in 1:nsim){   # loop over simulated datasets
     else
     { 
       if (eff.s[1]>0&eff.s[2]>0 &eff.s[3]>0) { # in region 
-      score.stat[j]<-t(eff.s)%*%inv.var.eff.s%*%eff.s  
+      score.stat[j]<-t(eff.s)%*%inv.var.eff.s%*%eff.s
+      in.region<-in.region +1
     }
     else
     {
       score.stat[j]<-0
-      out.of.region<-out.of.region +1
+      
     }
     }}}
     #  p-value for score statistic
@@ -132,5 +146,5 @@ for(j in 1:nsim){   # loop over simulated datasets
  
   score.test<-sum(p.value.score<alfa)/nsim
   
-  return(c(out.of.region,score.test,score.stat,score.vector))
+  return(c(in.region,score.test,score.stat,score.vector))
 } #end function definition
