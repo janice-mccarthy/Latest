@@ -69,7 +69,8 @@ for(j in 1:nsim){   # loop over simulated datasets
     
     theta.0<-c(as.numeric(nuisance[1]),as.numeric(nuisance[2])) # null theta under full model
     e.eta<-rep(0,n)
-    
+  
+    # The following only makes sense for genome-wide calculations
     for (k in 1:n){
       w<-c(1,z[k])    
       e.eta[k]<-exp(w%*%theta.0) 
@@ -84,7 +85,7 @@ for(j in 1:nsim){   # loop over simulated datasets
     rho.23<-var[2,3]/sqrt(var[2,2]*var[3,3])
     
     weight <-1/(2) - (1/(4*pi))*(acos(rho.12)+acos(rho.13)+acos(rho.23)) # weight for chi-bar-squared statistic
-    print(weight)
+   # print(weight)
     
     # information submatrices needed for efficient score
     I.ab<-Information[1:3,4:5]
@@ -101,22 +102,22 @@ for(j in 1:nsim){   # loop over simulated datasets
     
     if (eff.s[1]>0&eff.s[2]>0&eff.s[3]<0){  # project onto 1-2 plane by subtracting component in direction 3         
       l.proj.direction<-c(0,0,1)%*%inv.var.eff.s%*%c(0,0,1)
-      proj.score<-(t(eff.s)%*%inv.var.eff.s%*%c(0,0,1)/l.proj.direction)*c(0,0,1)
-      score.stat[j]<-proj.score%*%inv.var.eff.s%*%proj.score  
+      proj.score<- eff.s - (t(eff.s)%*%inv.var.eff.s%*%c(0,0,1)/l.proj.direction)*c(0,0,1)
+      score.stat[j]<-t(proj.score)%*%inv.var.eff.s%*%proj.score  
     }
     else
     {
      if(eff.s[1]>0&eff.s[2]<0&eff.s[3]>0){ # project onto 1-3 plane 
        l.proj.direction<-c(0,1,0)%*%inv.var.eff.s%*%c(0,1,0)
-       proj.score<-t(eff.s)%*%inv.var.eff.s%*%c(0,1,0)/l.proj.direction*c(0,1,0)
-       score.stat[j]<-proj.score%*%inv.var.eff.s%*%proj.score    
+       proj.score<- eff.s - t(eff.s)%*%inv.var.eff.s%*%c(0,1,0)/l.proj.direction*c(0,1,0)
+       score.stat[j]<-t(proj.score)%*%inv.var.eff.s%*%proj.score    
       }
     else 
     { 
      if(eff.s[1]<0&eff.s[2]>0&eff.s[3]>0){ # project onto 2-3 plane {
       l.proj.direction<-c(1,0,0)%*%inv.var.eff.s%*%c(1,0,0)
-      proj.score<-t(eff.s)%*%inv.var.eff.s%*%c(1,0,0)/l.proj.direction*c(1,0,0)
-      score.stat[j]<-proj.score%*%inv.var.eff.s%*%proj.score    
+      proj.score<- eff.s - t(eff.s)%*%inv.var.eff.s%*%c(1,0,0)/l.proj.direction*c(1,0,0)
+      score.stat[j]<-t(proj.score)%*%inv.var.eff.s%*%proj.score    
       
     }
     else
@@ -136,7 +137,8 @@ for(j in 1:nsim){   # loop over simulated datasets
     score.vector[2,j]<-eff.s[2]
     score.vector[3,j]<-eff.s[3]
     
-    p.value.score[j]<-weight*(1-pchisq(score.stat[j],3)) + (1-weight)*(1-pchisq(score.stat[j],2))
+    p.value.score[j]<-0.5*weight*(1-pchisq(score.stat[j],3)) + 
+     (1-weight)*(1-pchisq(score.stat[j],2)) + 0.5*weight*(1-pchisq(score.stat[j],0))
      
     # corr12[j]<-var.eff.s[1,2,j]/sqrt(var.eff.s[1,1,j]*var.eff.s[2,2,j]) # correlation between score statistics
     if (j%%10 == 0)
