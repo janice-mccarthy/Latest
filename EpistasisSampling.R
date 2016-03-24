@@ -127,26 +127,51 @@ for(j in 1:nsim){   # loop over simulated datasets
       in.region<-in.region +1
     }
     else
+    { 
+      if (eff.s[1]>0&eff.s[2]<0&eff.s[3]<0){  # project onto 1-d subspace         
+        l.proj.direction<-c(1,0,0)%*%inv.var.eff.s%*%c(1,0,0)
+        proj.score<- (t(eff.s)%*%inv.var.eff.s%*%c(1,0,0)/l.proj.direction)*c(1,0,0)
+        score.stat[j]<-t(proj.score)%*%inv.var.eff.s%*%proj.score  
+      }
+  
+    else
+    { 
+      if (eff.s[1]<0&eff.s[2]>0&eff.s[3]<0){  # project onto 1-d subspace         
+        l.proj.direction<-c(0,1,0)%*%inv.var.eff.s%*%c(0,1,0)
+        proj.score<- (t(eff.s)%*%inv.var.eff.s%*%c(0,1,0)/l.proj.direction)*c(0,1,0)
+        score.stat[j]<-t(proj.score)%*%inv.var.eff.s%*%proj.score  
+      }
+    
+    else
+    { 
+      if (eff.s[1]<0&eff.s[2]<0&eff.s[3]>0){  # project onto 1-d subspace         
+        l.proj.direction<-c(0,0,1)%*%inv.var.eff.s%*%c(0,0,1)
+        proj.score<- (t(eff.s)%*%inv.var.eff.s%*%c(0,0,1)/l.proj.direction)*c(0,0,1)
+        score.stat[j]<-t(proj.score)%*%inv.var.eff.s%*%proj.score  
+      }
+    
+    else
     {
       score.stat[j]<-0
       
     }
-    }}}
+    }}}}}}
     #  p-value for score statistic
     score.vector[1,j]<-eff.s[1]
     score.vector[2,j]<-eff.s[2]
     score.vector[3,j]<-eff.s[3]
     
-    p.value.score[j]<-0.5*weight*(1-pchisq(score.stat[j],3)) + 
-     (1-weight)*(1-pchisq(score.stat[j],2)) + 0.5*weight*(1-pchisq(score.stat[j],0))
+    p.value.score[j]<-weight*(1-pchisq(score.stat[j],3)) + 
+     0.5*(1-weight)*(1-pchisq(score.stat[j],2)) + 0.5*(1-weight)*(1-pchisq(score.stat[j],1)) + weight*(1-pchisq(score.stat[j],0))
      
     # corr12[j]<-var.eff.s[1,2,j]/sqrt(var.eff.s[1,1,j]*var.eff.s[2,2,j]) # correlation between score statistics
-    if (j%%10 == 0)
+    if (j%%100 == 0)
         print(j)
     
   } # end simulation loop
  
   score.test<-sum(p.value.score<alfa)/nsim
   
-  return(c(in.region,score.test,score.stat,score.vector))
+#  return(c(in.region,score.test,score.stat,score.vector))
+   return(score.test)
 } #end function definition
